@@ -1,33 +1,100 @@
-/* Интерфейс управления временем */
+/**
+ * @file hk_interfaces.idl
+ * @brief Interface definitions for Heuristic OS core components.
+ * Defines RPC procedures for system orchestration, polymorphism, 
+ * and cryptographic attestation.
+ */
+
+/* --- Scheduling & Time Management --- */
 procedure TimerControl { 
+    /**
+     * @brief Set the hardware timer quantum.
+     * @param milliseconds Duration of the scheduling quantum.
+     */
     void set_quantum(in int milliseconds); 
 }
 
-/* Интерфейс JIT-генератора */
+/* --- Polymorphic Code Generation --- */
 procedure GeneratorInterface {
-    void request_generation(in uint64_t bitcode_ptr, in int count, in int threat_level);
+    /**
+     * @brief Trigger the synthesis of a new polymorphic code variant.
+     * @param base_addr Virtual address target for the synthesized code.
+     * @param variant_id Unique identifier for the generated variant.
+     * @param complexity Scaling factor for junk-code and masking density.
+     */
+    void request_generation(in uint64_t base_addr, in int variant_id, in int complexity);
 }
 
-/* Интерфейс администратора */
+/* --- Administrative Control & Telemetry --- */
 procedure AdminInterface {
+    /** @brief Print system security status and mutation statistics. */
     void print_status(void);
+    
+    /** @brief Manually trigger a system-wide logic mutation transaction. */
     void force_mutation(void);
 }
 
-/* Остальные системные интерфейсы */
-procedure ControlInterface { int cmd(in int type, in int payload); }
-procedure VerifyInterface { uint32_t get_hash(void); }
-procedure RepoInterface { int get_variant_address(in int variant_id); }
-procedure RepoWriteInterface { void add_variant(in int variant_id, in int security_flags); }
+/* --- Execution Control --- */
+procedure ControlInterface { 
+    /**
+     * @brief Send a control command to the isolated worker.
+     * @param type Command identifier (e.g., EXECUTE, HALT).
+     * @param payload Optional parameter for the command.
+     * @return Execution status code or result.
+     */
+    int cmd(in int type, in int payload); 
+}
 
+/* --- Verification & Integrity --- */
+procedure VerifyInterface { 
+    /** @return CRC32/Jenkins hash of the component's current code region. */
+    uint32_t get_hash(void); 
+}
+
+/* --- Variant Repository Management --- */
+procedure RepoInterface { 
+    /** @return Virtual address of the requested variant in shared memory. */
+    int get_variant_address(in int variant_id); 
+}
+
+procedure RepoWriteInterface { 
+    /**
+     * @brief Register a newly generated variant in the secure repository.
+     * @param variant_id Identifier assigned by the Generator.
+     * @param size Size of the generated binary in bytes.
+     */
+    void add_variant(in int variant_id, in int size); 
+}
+
+/* --- Cryptographic Provider (fTPM) --- */
 procedure TpmInterface {
+    /**
+     * @brief Generate a keyed HMAC signature for data attestation.
+     * @param raw_hash Input hash to be signed.
+     * @return 32-bit truncated HMAC signature.
+     */
     uint32_t sign_data(in uint32_t raw_hash);
+
+    /**
+     * @brief Verify data integrity against a provided signature.
+     * @param raw_hash Hash to verify.
+     * @param signature Signature provided by the repository.
+     * @return Boolean (1 for valid, 0 for violation).
+     */
     int verify_signature(in uint32_t raw_hash, in uint32_t signature);
 }
 
+/* --- Isolated Storage & VFS API --- */
 procedure PosixAPI {
+    /** @brief Secure file open proxy. */
     int open(in string pathname, in int flags);
+    
+    /** @brief Buffered read from the Virtual File System. */
     int read(in int fd, in int count);
+    
+    /** @brief Buffered write to the Virtual File System. */
     int write(in int fd, in int count);
+    
+    /** @brief Close file descriptor. */
     int close(in int fd);
 }
