@@ -1,115 +1,112 @@
+#!/usr/bin/env python3
+"""
+Heuristic OS Variant Pool Generator
+Orchestrates mutation, formal verification, and header packaging.
+"""
+
 import os
 import subprocess
 import hashlib
 import json
-import shutil
+import sys
 
-# Конфигурация
+# Configuration
 MODULE_NAME = "worker_logic"
-SOURCE_FILE = f"../hk_system/components/Worker/{MODULE_NAME}.c"
+SOURCE_FILE = f"../projects/camkes/apps/hk_system/components/Worker/{MODULE_NAME}.c"
 VARIANTS_COUNT = 5
-OUTPUT_DIR = "build_artifacts"
+ARTIFACTS_DIR = "build_artifacts"
+OUTPUT_HEADER = "../projects/camkes/apps/hk_system/components/Repository/baked_mutations.h"
 
-def run_cmd(cmd):
-    print(f"⚙️ Выполнение: {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"❌ Ошибка:\n{result.stderr}")
-        exit(1)
-    return result.stdout
+def run_command(cmd, description):
+    print(f"[PROCESS] {description}...")
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Command failed: {' '.join(cmd)}")
+        print(f"[DETAILS] {e.stderr}")
+        sys.exit(1)
 
-def main():
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    manifest = {
-        "module_id": "hk_worker_01",
-        "variants": []
-    }
+def generate_variants():
+    if not os.path.exists(ARTIFACTS_DIR):
+        os.makedirs(ARTIFACTS_DIR)
 
-    # Этап 1: Компиляция в LLVM IR (Эталон)
-    orig_ir = f"{OUTPUT_DIR}/{MODULE_NAME}_orig.ll"
-    run_cmd(["clang-17", "-O1", "-S", "-emit-llvm", "-g", SOURCE_FILE, "-o", orig_ir])
-    print("✅ Этап 1: Исходный LLVM IR сгенерирован.")
+    manifest = {"module_id": "hk_worker_core", "variants": []}
 
-    # Этап 2 и 3: Генерация и Верификация (Alive2)
-    valid_variants = 0
-    attempt = 0
+    # Step 1: Base LLVM IR Generation
+    base_ir = os.path.join(ARTIFACTS_DIR, f"{MODULE_NAME}_base.ll")
+    run_command([
+        "clang-17", "-O1", "-S", "-emit-llvm", "-fno-discard-value-names",
+        SOURCE_FILE, "-o", base_ir
+    ], "Generating base LLVM IR")
 
-    while valid_variants < VARIANTS_COUNT:
-        attempt += 1
-        mutated_ir = f"{OUTPUT_DIR}/{MODULE_NAME}_v{valid_variants}.ll"
+    valid_count = 0
+    attempts = 0
+
+    while valid_count < VARIANTS_COUNT:
+        attempts += 1
+        mutated_ir = os.path.join(ARTIFACTS_DIR, f"{MODULE_NAME}_v{valid_count}.ll")
         
-        # Запускаем наш кастомный LLVM Pass (предполагается, что он скомпилирован в Mutator.so)
-        # В качестве симуляции мутатора для скрипта, мы пока просто скопируем файл,
-        # в реальности здесь будет вызов: opt-17 -load ./Mutator.so -mutate ...
-        run_cmd(["opt-17", "-O2", "-S", orig_ir, "-o", mutated_ir])
-        
-        # Формальная верификация через Alive2
-        print(f"🔍 Запуск Alive2 для варианта {valid_variants} (попытка {attempt})...")
-        alive_res = subprocess.run(["alive-tv", orig_ir, mutated_ir], capture_output=True, text=True)
-        
+        # Step 2: Apply Mutation Pass
+        # Note: Requires Mutator.so to be pre-built
+        run_command([
+            "opt-17", "-load-pass-plugin", "./Mutator.so", 
+            "-passes=hk-mutate", "-S", base_ir, "-o", mutated_ir
+        ], f"Applying mutation to variant {valid_count}")
+
+        # Step 3: Formal Verification (Alive2)
+        print(f"[VERIFY] Running formal equivalence check for variant {valid_count}...")
+        alive_res = subprocess.run(["alive-tv", base_ir, mutated_ir], capture_output=True, text=True)
+
         if "Transformation seems to be correct!" in alive_res.stdout:
-            print(f"✅ Alive2 подтвердил эквивалентность варианта {valid_variants}!")
+            print(f"[INFO] Variant {valid_count} verified successfully.")
             
-            # Этап 4: Компиляция в бинарный код (PIC)
-            obj_file = f"{OUTPUT_DIR}/{MODULE_NAME}_v{valid_variants}.o"
-            bin_file = f"{OUTPUT_DIR}/{MODULE_NAME}_v{valid_variants}.bin"
+            # Step 4: Binary Compilation (PIC)
+            obj_file = os.path.join(ARTIFACTS_DIR, f"v{valid_count}.o")
+            bin_file = os.path.join(ARTIFACTS_DIR, f"v{valid_count}.bin")
             
-            run_cmd(["llc-17", "-relocation-model=pic", "-filetype=obj", mutated_ir, "-o", obj_file])
-            run_cmd(["llvm-objcopy-17", "-O", "binary", "--only-section=.text", obj_file, bin_file])
-            
-            # Хеширование
+            run_command(["llc-17", "-relocation-model=pic", "-filetype=obj", mutated_ir, "-o", obj_file], "Compiling to object")
+            run_command(["llvm-objcopy-17", "-O", "binary", "--only-section=.text", obj_file, bin_file], "Extracting text section")
+
             with open(bin_file, "rb") as f:
-                bin_data = f.read()
-                b_hash = hashlib.sha256(bin_data).hexdigest()
-                
+                data = f.read()
+                file_hash = hashlib.sha256(data).hexdigest()
+
             manifest["variants"].append({
-                "variant_id": valid_variants,
-                "binary_hash": b_hash,
-                "size": len(bin_data),
-                "file": bin_file
+                "id": valid_count,
+                "hash": file_hash,
+                "size": len(data),
+                "path": bin_file
             })
-            valid_variants += 1
+            valid_count += 1
         else:
-            print("❌ Alive2 нашел UB или ошибку! Вариант отброшен.")
+            print(f"[WARN] Variant {valid_count} failed verification. Retrying...")
 
-    # Сохраняем манифест
-    manifest_path = f"{OUTPUT_DIR}/manifest.json"
-    with open(manifest_path, "w") as f:
-        json.dump(manifest, f, indent=4)
-        
-    # Симуляция цифровой подписи (Ed25519) закрытым ключом сборочного сервера
-    print("✍️ Подписание пула вариантов (Ed25519)...")
-    sig_path = f"{OUTPUT_DIR}/manifest.sig"
-    with open(sig_path, "w") as f:
-        f.write("SIMULATED_ED25519_SIGNATURE_998877665544332211")
+    return manifest
 
-    print(f"\n🎉 Пул из {VARIANTS_COUNT} вариантов успешно сгенерирован, верифицирован и подписан!")
+def package_header(manifest):
+    print(f"[PACKAGE] Writing artifacts to {OUTPUT_HEADER}...")
+    with open(OUTPUT_HEADER, "w") as f:
+        f.write("/* Auto-generated by Heuristic OS Build System. DO NOT EDIT. */\n")
+        f.write("#ifndef BAKED_MUTATIONS_H\n#define BAKED_MUTATIONS_H\n\n#include <stdint.h>\n\n")
+        f.write(f"#define POOL_SIZE {len(manifest['variants'])}\n\n")
 
-if __name__ == "__main__":
-    main()
-# Этап 5: Упаковка в C-Header для seL4 CAmkES
-    c_header_path = "../hk_system/components/Repository/baked_mutations.h"
-    with open(c_header_path, "w") as f:
-        f.write("#ifndef BAKED_MUTATIONS_H\n#define BAKED_MUTATIONS_H\n\n")
-        f.write("#include <stdint.h>\n\n")
-        f.write(f"#define POOL_SIZE {VARIANTS_COUNT}\n\n")
-        
         for var in manifest["variants"]:
-            v_id = var['variant_id']
-            f.write(f"static const uint8_t variant_{v_id}_data[] = {{\n")
-            with open(var['file'], "rb") as bf:
-                bytes_data = bf.read()
-                hex_array = ", ".join([f"0x{b:02x}" for b in bytes_data])
-                f.write(f"    {hex_array}\n")
+            f.write(f"/* Variant ID: {var['id']} | Hash: {var['hash']} */\n")
+            f.write(f"static const uint8_t variant_{var['id']}_data[] = {{\n")
+            with open(var['path'], "rb") as bf:
+                hex_data = ", ".join([f"0x{b:02x}" for b in bf.read()])
+                f.write(f"    {hex_data}\n")
             f.write("};\n\n")
-            
-        # Создаем массив структур для Хранилища
+
         f.write("typedef struct {\n    int id;\n    const uint8_t* data;\n    int size;\n    const char* hash;\n} variant_record_t;\n\n")
         f.write("static const variant_record_t mutation_pool[POOL_SIZE] = {\n")
         for var in manifest["variants"]:
-            v_id = var['variant_id']
-            f.write(f"    {{{v_id}, variant_{v_id}_data, {var['size']}, \"{var['binary_hash']}\"}},\n")
-        f.write("};\n\n")
-        
-        f.write("#endif // BAKED_MUTATIONS_H\n")
-    print(f"📦 Артефакты упакованы в {c_header_path} для сборки CAmkES.")
+            f.write(f"    {{{var['id']}, variant_{var['id']}_data, {var['size']}, \"{var['hash']}\"}},\n")
+        f.write("};\n\n#endif\n")
+
+if __name__ == "__main__":
+    print("--- Heuristic OS Mutation Pipeline ---")
+    results = generate_variants()
+    package_header(results)
+    print(f"[SUCCESS] Generated {VARIANTS_COUNT} variants for CAmkES repository.")
