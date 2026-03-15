@@ -1,59 +1,94 @@
+/**
+ * @file hk_system.camkes
+ * @brief System Architecture Definition for Heuristic OS.
+ * * Defines the component interaction model, secure communication channels,
+ * and memory access capabilities for the Polymorphic TEE.
+ */
+
 import <std_connector.camkes>;
 import "interfaces/hk_interfaces.idl";
+
+/* --- Security & Cryptographic Components --- */
 
 component TPM_Device {
     provides TpmInterface crypto_api;
 }
+
+component Repository {
+    provides RepoInterface repo_api;
+    provides RepoWriteInterface repo_write_api;
+    uses TpmInterface tpm_api;
+    
+    dataport Buf(16777216) secure_storage; // Meta-repository for code variants
+    dataport Buf(16777216) gen_input_buf;  // Buffer for raw code variants
+}
+
+/* --- Logic & Execution Components --- */
+
+component Generator {
+    control;
+    provides GeneratorInterface gen_api;
+    uses RepoWriteInterface repo_write_api;
+    
+    dataport Buf(16777216) gen_output_buf; // Temporary buffer for synthesis
+    dataport Buf(67108864) guest_ram;      // Logic masking working memory
+}
+
+component Worker {
+    provides ControlInterface ctrl_api;
+    provides VerifyInterface verifier_target;
+    uses PosixAPI fs_api;
+    
+    dataport Buf(4096) executable_arena;   // Target region for polymorphic code (RX)
+    dataport Buf(1048576) fs_buffer;       // IO buffer for VFS communication
+}
+
+/* --- System Monitor & Management --- */
+
+component Dispatcher {
+    control;
+    provides AdminInterface admin_api;
+    uses ControlInterface worker_ctrl;
+    uses RepoInterface repo_api;
+    uses TimerControl timer_ctrl;
+    uses GeneratorInterface gen_api;
+    uses TpmInterface tpm_verify_api;      // Secure attestation port
+    
+    consumes Notification hw_tick;         // Periodic scheduling interrupt
+    
+    dataport Buf(4096) worker_arena;       // Proxy to worker's executable space
+    dataport Buf(16777216) repo_metadata;  // Read access to code signatures
+    dataport Buf(67108864) guest_ram;      // Monitoring access to Generator memory
+}
+
+/* --- Utility & Infrastructure --- */
 
 component VirtualFileSystem {
     provides PosixAPI posix_api;
     dataport Buf(1048576) virtual_disk_arena;
 }
 
-component Dispatcher {
-    control;
-    provides AdminInterface admin_api;
-    uses ControlInterface worker_ctrl;
-    uses RepoInterface repo;
-    uses TimerControl timer_ctrl;
-    uses GeneratorInterface gen;
-    uses TpmInterface tpm_verify;      // <-- ВОТ ЭТОТ ПОРТ МЫ ПОТЕРЯЛИ!
-    consumes Notification hw_tick;
-    dataport Buf(4096) worker_arena;
-    dataport Buf(16777216) repo_storage;
-    dataport Buf(67108864) guest_ram; 
+component Verifier { 
+    control; 
+    uses VerifyInterface target; 
 }
 
-component Repository {
-    provides RepoInterface repo;
-    provides RepoWriteInterface repo_write;
-    uses TpmInterface tpm;
-    dataport Buf(16777216) secure_storage;
-    dataport Buf(16777216) gen_buf;
+component Scheduler { 
+    control; 
+    emits Notification hw_tick; 
+    provides TimerControl ctrl; 
 }
 
-component Worker {
-    provides ControlInterface ctrl;
-    provides VerifyInterface verifier_target;
-    dataport Buf(4096) executable_arena;
-    uses PosixAPI fs;
-    dataport Buf(1048576) fs_buffer;
+component AdminConsole { 
+    control; 
+    uses AdminInterface admin_api; 
 }
 
-component Verifier { control; uses VerifyInterface target; }
-component Scheduler { control; emits Notification hw_tick; provides TimerControl ctrl; }
-component AdminConsole { control; uses AdminInterface admin_api; }
-
-component Generator {
-    control;
-    provides GeneratorInterface gen_api;
-    uses RepoWriteInterface repo_write;
-    dataport Buf(16777216) gen_buf;
-    dataport Buf(67108864) guest_ram; 
-}
+/* --- System Assembly --- */
 
 assembly {
     composition {
+        /* Component Instances */
         component Dispatcher dispatcher_inst;
         component Worker worker_inst;
         component Verifier verifier_inst;
@@ -64,36 +99,44 @@ assembly {
         component TPM_Device tpm_inst;
         component VirtualFileSystem vfs_inst;
 
+        /* RPC Communication Channels */
         connection seL4RPCCall link_admin(from admin_inst.admin_api, to dispatcher_inst.admin_api);
-        connection seL4RPCCall posix_link(from worker_inst.fs, to vfs_inst.posix_api);
-        connection seL4RPCCall link_ctrl(from dispatcher_inst.worker_ctrl, to worker_inst.ctrl);
-        connection seL4RPCCall link_verify(from verifier_inst.target, to worker_inst.verifier_target);
-        connection seL4RPCCall link_repo(from dispatcher_inst.repo, to repo_inst.repo);
-        connection seL4RPCCall link_timer_ctrl(from dispatcher_inst.timer_ctrl, to timer_inst.ctrl);
-        connection seL4RPCCall link_gen_request(from dispatcher_inst.gen, to gen_inst.gen_api);
-        connection seL4RPCCall link_repo_write(from gen_inst.repo_write, to repo_inst.repo_write);
-        
-        // Два провода к одному TPM (Репозиторий подписывает, Диспетчер проверяет)
-        connection seL4RPCCall link_repo_tpm(from repo_inst.tpm, to tpm_inst.crypto_api);
-        connection seL4RPCCall link_disp_tpm(from dispatcher_inst.tpm_verify, to tpm_inst.crypto_api);
+        connection seL4RPCCall link_posix(from worker_inst.fs_api, to vfs_inst.posix_api);
+        connection seL4RPCCall link_worker_ctrl(from dispatcher_inst.worker_ctrl, to worker_inst.ctrl_api);
+        connection seL4RPCCall link_verify_logic(from verifier_inst.target, to worker_inst.verifier_target);
+        connection seL4RPCCall link_repo_read(from dispatcher_inst.repo_api, to repo_inst.repo_api);
+        connection seL4RPCCall link_repo_write(from gen_inst.repo_write_api, to repo_inst.repo_write_api);
+        connection seL4RPCCall link_gen_trigger(from dispatcher_inst.gen_api, to gen_inst.gen_api);
+        connection seL4RPCCall link_timer_mgmt(from dispatcher_inst.timer_ctrl, to timer_inst.ctrl);
 
-        connection seL4SharedData link_arena(from dispatcher_inst.worker_arena, to worker_inst.executable_arena);
-        connection seL4SharedData link_storage(from dispatcher_inst.repo_storage, to repo_inst.secure_storage);
-        connection seL4SharedData link_gen_storage(from gen_inst.gen_buf, to repo_inst.gen_buf);
-        connection seL4SharedData link_vm_ram(from dispatcher_inst.guest_ram, to gen_inst.guest_ram);
-        connection seL4SharedData link_vfs_buf(from worker_inst.fs_buffer, to vfs_inst.virtual_disk_arena);
+        /* Cryptographic Attestation Channels (Multiple clients for one TPM) */
+        connection seL4RPCCall link_repo_tpm_sign(from repo_inst.tpm_api, to tpm_inst.crypto_api);
+        connection seL4RPCCall link_disp_tpm_audit(from dispatcher_inst.tpm_verify_api, to tpm_inst.crypto_api);
 
-        connection seL4Notification link_timer(from timer_inst.hw_tick, to dispatcher_inst.hw_tick);
+        /* Shared Memory Regions (Dataports) */
+        connection seL4SharedData link_exec_arena(from dispatcher_inst.worker_arena, to worker_inst.executable_arena);
+        connection seL4SharedData link_secure_meta(from dispatcher_inst.repo_metadata, to repo_inst.secure_storage);
+        connection seL4SharedData link_gen_transfer(from gen_inst.gen_output_buf, to repo_inst.gen_input_buf);
+        connection seL4SharedData link_system_ram(from dispatcher_inst.guest_ram, to gen_inst.guest_ram);
+        connection seL4SharedData link_vfs_io(from worker_inst.fs_buffer, to vfs_inst.virtual_disk_arena);
+
+        /* System Synchronization */
+        connection seL4Notification link_scheduler_pulse(from timer_inst.hw_tick, to dispatcher_inst.hw_tick);
     }
+
     configuration {
-	worker_inst.executable_arena_access = "RX";
-        dispatcher_inst.worker_arena_access = "RW";
-        dispatcher_inst.repo_storage_access = "R";
-        repo_inst.secure_storage_access = "RW";
-        gen_inst.gen_buf_access = "RW";
-        repo_inst.gen_buf_access = "R";
-        dispatcher_inst.guest_ram_access = "RW";
-        gen_inst.guest_ram_access = "RW";
+        /* Security Policies: Memory Permissions */
+        worker_inst.executable_arena_access = "RX";  // Worker can only execute and read code
+        dispatcher_inst.worker_arena_access = "RW";  // Dispatcher writes verified code
+        
+        dispatcher_inst.repo_metadata_access = "R";  // Read-only access to signatures
+        repo_inst.secure_storage_access      = "RW";
+        
+        gen_inst.gen_output_buf_access       = "RW";
+        repo_inst.gen_input_buf_access       = "R";  // Repository only reads from Generator
+        
+        dispatcher_inst.guest_ram_access     = "RW";
+        gen_inst.guest_ram_access            = "RW";
     }
 }
 
