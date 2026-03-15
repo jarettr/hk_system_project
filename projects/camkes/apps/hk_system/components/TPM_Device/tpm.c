@@ -1,11 +1,19 @@
+/**
+ * @file tpm.c
+ * @brief Simulated Firmware Trusted Platform Module (fTPM).
+ * Provides isolated cryptographic operations (HMAC-SHA256) for component attestation.
+ * The master secret key never leaves this component's memory space.
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <camkes.h>
 
 /* =====================================================================
- * РЕАЛИЗАЦИЯ SHA-256
+ * SHA-256 INTERNAL IMPLEMENTATION
  * ===================================================================== */
+
 #define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 #define CH(x, y, z) (((x) & (y)) ^ (~(x) & (z)))
 #define MAJ(x, y, z) (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
@@ -14,7 +22,7 @@
 #define SIG0(x) (ROTR(x, 7) ^ ROTR(x, 18) ^ ((x) >> 3))
 #define SIG1(x) (ROTR(x, 17) ^ ROTR(x, 19) ^ ((x) >> 10))
 
-static const uint32_t k[64] = {
+static const uint32_t sha256_k[64] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -28,12 +36,13 @@ static const uint32_t k[64] = {
 typedef struct {
     uint8_t data[64];
     uint32_t datalen;
-    unsigned long long bitlen;
+    uint64_t bitlen;
     uint32_t state[8];
 } SHA256_CTX;
 
 static void sha256_transform(SHA256_CTX *ctx, const uint8_t data[]) {
     uint32_t a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
+    
     for (i = 0, j = 0; i < 16; ++i, j += 4)
         m[i] = (data[j] << 24) | (data[j + 1] << 16) | (data[j + 2] << 8) | (data[j + 3]);
     for ( ; i < 64; ++i)
@@ -43,17 +52,19 @@ static void sha256_transform(SHA256_CTX *ctx, const uint8_t data[]) {
     e = ctx->state[4]; f = ctx->state[5]; g = ctx->state[6]; h = ctx->state[7];
 
     for (i = 0; i < 64; ++i) {
-        t1 = h + EP1(e) + CH(e, f, g) + k[i] + m[i];
+        t1 = h + EP1(e) + CH(e, f, g) + sha256_k[i] + m[i];
         t2 = EP0(a) + MAJ(a, b, c);
         h = g; g = f; f = e; e = d + t1;
         d = c; c = b; b = a; a = t1 + t2;
     }
+    
     ctx->state[0] += a; ctx->state[1] += b; ctx->state[2] += c; ctx->state[3] += d;
     ctx->state[4] += e; ctx->state[5] += f; ctx->state[6] += g; ctx->state[7] += h;
 }
 
 static void sha256_init(SHA256_CTX *ctx) {
-    ctx->datalen = 0; ctx->bitlen = 0;
+    ctx->datalen = 0; 
+    ctx->bitlen = 0;
     ctx->state[0] = 0x6a09e667; ctx->state[1] = 0xbb67ae85;
     ctx->state[2] = 0x3c6ef372; ctx->state[3] = 0xa54ff53a;
     ctx->state[4] = 0x510e527f; ctx->state[5] = 0x9b05688c;
@@ -73,19 +84,24 @@ static void sha256_update(SHA256_CTX *ctx, const uint8_t data[], size_t len) {
 
 static void sha256_final(SHA256_CTX *ctx, uint8_t hash[]) {
     uint32_t i = ctx->datalen;
+    
     ctx->data[i++] = 0x80;
-    if (ctx->datalen < 56) memset(ctx->data + i, 0, 56 - i);
-    else {
+    if (ctx->datalen < 56) {
+        memset(ctx->data + i, 0, 56 - i);
+    } else {
         memset(ctx->data + i, 0, 64 - i);
         sha256_transform(ctx, ctx->data);
         memset(ctx->data, 0, 56);
     }
+    
     ctx->bitlen += ctx->datalen * 8;
     ctx->data[63] = ctx->bitlen; ctx->data[62] = ctx->bitlen >> 8;
     ctx->data[61] = ctx->bitlen >> 16; ctx->data[60] = ctx->bitlen >> 24;
     ctx->data[59] = ctx->bitlen >> 32; ctx->data[58] = ctx->bitlen >> 40;
     ctx->data[57] = ctx->bitlen >> 48; ctx->data[56] = ctx->bitlen >> 56;
+    
     sha256_transform(ctx, ctx->data);
+    
     for (i = 0; i < 4; ++i) {
         hash[i]      = (ctx->state[0] >> (24 - i * 8)) & 0xff;
         hash[i + 4]  = (ctx->state[1] >> (24 - i * 8)) & 0xff;
@@ -99,10 +115,10 @@ static void sha256_final(SHA256_CTX *ctx, uint8_t hash[]) {
 }
 
 /* =====================================================================
- * РЕАЛИЗАЦИЯ HMAC И ИНТЕРФЕЙСОВ TPM
+ * HMAC AND TPM INTERFACE IMPLEMENTATION
  * ===================================================================== */
 
-// Имитация секретного ключа внутри изолированного криптопроцессора (32 байта)
+/* Master Secret Key (Simulated hardware-fused key, 32 bytes) */
 static const uint8_t tpm_secret_key[32] = {
     0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0,
     0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
@@ -110,7 +126,11 @@ static const uint8_t tpm_secret_key[32] = {
     0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89
 };
 
-// Функция расчета HMAC-SHA256 (с усечением до 32 бит для нашего IDL)
+/**
+ * @brief Computes HMAC-SHA256 and truncates it to 32-bits.
+ * @param data Data payload to be signed.
+ * @return Truncated HMAC signature.
+ */
 static uint32_t compute_hmac_sha256_trunc(uint32_t data) {
     SHA256_CTX ctx;
     uint8_t k_ipad[64], k_opad[64];
@@ -124,50 +144,51 @@ static uint32_t compute_hmac_sha256_trunc(uint32_t data) {
         k_opad[i] ^= tpm_secret_key[i];
     }
 
-    // Inner SHA-256
+    /* Inner SHA-256 */
     sha256_init(&ctx);
     sha256_update(&ctx, k_ipad, 64);
-    sha256_update(&ctx, (uint8_t*)&data, 4); // Хешируем входные данные
+    sha256_update(&ctx, (uint8_t*)&data, 4); 
     sha256_final(&ctx, inner_hash);
 
-    // Outer SHA-256
+    /* Outer SHA-256 */
     sha256_init(&ctx);
     sha256_update(&ctx, k_opad, 64);
     sha256_update(&ctx, inner_hash, 32);
     sha256_final(&ctx, final_hash);
 
-    // Усекаем 256 бит (32 байта) до 32 бит (4 байта) для возврата
+    /* Truncate 256-bit hash to 32-bit for IDL compatibility */
     uint32_t signature;
     memcpy(&signature, final_hash, 4);
     return signature;
 }
 
 uint32_t crypto_api_sign_data(uint32_t raw_hash) {
-    printf("    [HW-TPM] 📦 Принят хэш на подпись: 0x%X\n", raw_hash);
-    printf("    [HW-TPM] 🔒 Вычисление HMAC-SHA256 аппаратным ключом...\n");
+    printf("[fTPM] INFO: Attestation request received. Hash: 0x%08X\n", raw_hash);
+    printf("[fTPM] ACTION: Computing HMAC-SHA256 using secure hardware key...\n");
     
     uint32_t sig = compute_hmac_sha256_trunc(raw_hash);
     
-    printf("    [HW-TPM] 🖋️ Сигнатура сгенерирована: 0x%X\n", sig);
+    printf("[fTPM] SUCCESS: Signature generated: 0x%08X\n", sig);
     return sig; 
 }
 
 int crypto_api_verify_signature(uint32_t data_hash, uint32_t signature) {
-    printf("    [HW-TPM] 🔍 Верификация HMAC-SHA256: Hash=0x%X, Ожидаемая Sig=0x%X\n", data_hash, signature);
+    printf("[fTPM] INFO: Verification request. Hash=0x%08X, Expected Sig=0x%08X\n", data_hash, signature);
     
     uint32_t valid_sig = compute_hmac_sha256_trunc(data_hash);
     
     if (signature == valid_sig) {
-        printf("    [HW-TPM] ✅ ПОДПИСЬ ВАЛИДНА (МАТЕМАТИЧЕСКИ ДОКАЗАНО)!\n");
+        printf("[fTPM] SUCCESS: Signature VALID. Mathematical integrity proven.\n");
         return 1;
     } else {
-        printf("    [HW-TPM] ❌ ОШИБКА: Подпись не совпадает! (Рассчитано: 0x%X)\n", valid_sig);
+        printf("[fTPM] ERROR: Signature INVALID! (Calculated: 0x%08X). Potential tampering detected!\n", valid_sig);
         return 0;
     }
 }
 
 void hw_tick_handle(void) { }
+
 int run(void) {
-    printf("[TPM_DEVICE] fTPM (Firmware TPM) запущен. Крипто-движок HMAC-SHA256 активен.\n");
+    printf("[fTPM] INFO: Firmware TPM initialized. HMAC-SHA256 crypto-engine active.\n");
     return 0;
 }
