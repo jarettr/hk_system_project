@@ -1,0 +1,25 @@
+#include "../../include/hk_sdk.h"
+
+// Разработчик помечает функцию как уязвимую для атак.
+// Наш LLVM-парсер увидит аннотацию "hk_mutate" и применит защиты.
+HK_MUTATE
+int WorkerLogic(int a, int b) {
+    int result = a * b;
+    if (result > 100) {
+        return result - 10;
+    }
+    return result + 10;
+}
+
+// А это, например, инициализация оборудования.
+// Мутации здесь могут сломать тайминги железа, поэтому разработчик ставит запрет.
+HK_NO_MUTATE
+void CriticalHardwareInit() {
+    volatile int *hw_register = (int *)0xDEADBEEF;
+    *hw_register = 1; // Включаем железо
+}
+
+// Колбэк, который Воркер попросит вызвать ПЕРЕД тем, как его код подменят
+void on_before_mutation() {
+    // Здесь разработчик может сохранить важные данные в безопасное место
+}

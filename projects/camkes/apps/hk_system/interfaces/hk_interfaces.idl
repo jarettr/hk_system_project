@@ -1,0 +1,33 @@
+/* Интерфейс управления временем */
+procedure TimerControl { 
+    void set_quantum(in int milliseconds); 
+}
+
+/* Интерфейс JIT-генератора */
+procedure GeneratorInterface {
+    void request_generation(in uint64_t bitcode_ptr, in int count, in int threat_level);
+}
+
+/* Интерфейс администратора */
+procedure AdminInterface {
+    void print_status(void);
+    void force_mutation(void);
+}
+
+/* Остальные системные интерфейсы */
+procedure ControlInterface { int cmd(in int type, in int payload); }
+procedure VerifyInterface { uint32_t get_hash(void); }
+procedure RepoInterface { int get_variant_address(in int variant_id); }
+procedure RepoWriteInterface { void add_variant(in int variant_id, in int security_flags); }
+
+procedure TpmInterface {
+    uint32_t sign_data(in uint32_t raw_hash);
+    int verify_signature(in uint32_t raw_hash, in uint32_t signature);
+}
+
+procedure PosixAPI {
+    int open(in string pathname, in int flags);
+    int read(in int fd, in int count);
+    int write(in int fd, in int count);
+    int close(in int fd);
+}

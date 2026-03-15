@@ -1,0 +1,99 @@
+import <std_connector.camkes>;
+import "interfaces/hk_interfaces.idl";
+
+component TPM_Device {
+    provides TpmInterface crypto_api;
+}
+
+component VirtualFileSystem {
+    provides PosixAPI posix_api;
+    dataport Buf(1048576) virtual_disk_arena;
+}
+
+component Dispatcher {
+    control;
+    provides AdminInterface admin_api;
+    uses ControlInterface worker_ctrl;
+    uses RepoInterface repo;
+    uses TimerControl timer_ctrl;
+    uses GeneratorInterface gen;
+    uses TpmInterface tpm_verify;      // <-- ВОТ ЭТОТ ПОРТ МЫ ПОТЕРЯЛИ!
+    consumes Notification hw_tick;
+    dataport Buf(4096) worker_arena;
+    dataport Buf(16777216) repo_storage;
+    dataport Buf(67108864) guest_ram; 
+}
+
+component Repository {
+    provides RepoInterface repo;
+    provides RepoWriteInterface repo_write;
+    uses TpmInterface tpm;
+    dataport Buf(16777216) secure_storage;
+    dataport Buf(16777216) gen_buf;
+}
+
+component Worker {
+    provides ControlInterface ctrl;
+    provides VerifyInterface verifier_target;
+    dataport Buf(4096) executable_arena;
+    uses PosixAPI fs;
+    dataport Buf(1048576) fs_buffer;
+}
+
+component Verifier { control; uses VerifyInterface target; }
+component Scheduler { control; emits Notification hw_tick; provides TimerControl ctrl; }
+component AdminConsole { control; uses AdminInterface admin_api; }
+
+component Generator {
+    control;
+    provides GeneratorInterface gen_api;
+    uses RepoWriteInterface repo_write;
+    dataport Buf(16777216) gen_buf;
+    dataport Buf(67108864) guest_ram; 
+}
+
+assembly {
+    composition {
+        component Dispatcher dispatcher_inst;
+        component Worker worker_inst;
+        component Verifier verifier_inst;
+        component Repository repo_inst;
+        component Scheduler timer_inst;
+        component AdminConsole admin_inst;
+        component Generator gen_inst;
+        component TPM_Device tpm_inst;
+        component VirtualFileSystem vfs_inst;
+
+        connection seL4RPCCall link_admin(from admin_inst.admin_api, to dispatcher_inst.admin_api);
+        connection seL4RPCCall posix_link(from worker_inst.fs, to vfs_inst.posix_api);
+        connection seL4RPCCall link_ctrl(from dispatcher_inst.worker_ctrl, to worker_inst.ctrl);
+        connection seL4RPCCall link_verify(from verifier_inst.target, to worker_inst.verifier_target);
+        connection seL4RPCCall link_repo(from dispatcher_inst.repo, to repo_inst.repo);
+        connection seL4RPCCall link_timer_ctrl(from dispatcher_inst.timer_ctrl, to timer_inst.ctrl);
+        connection seL4RPCCall link_gen_request(from dispatcher_inst.gen, to gen_inst.gen_api);
+        connection seL4RPCCall link_repo_write(from gen_inst.repo_write, to repo_inst.repo_write);
+        
+        // Два провода к одному TPM (Репозиторий подписывает, Диспетчер проверяет)
+        connection seL4RPCCall link_repo_tpm(from repo_inst.tpm, to tpm_inst.crypto_api);
+        connection seL4RPCCall link_disp_tpm(from dispatcher_inst.tpm_verify, to tpm_inst.crypto_api);
+
+        connection seL4SharedData link_arena(from dispatcher_inst.worker_arena, to worker_inst.executable_arena);
+        connection seL4SharedData link_storage(from dispatcher_inst.repo_storage, to repo_inst.secure_storage);
+        connection seL4SharedData link_gen_storage(from gen_inst.gen_buf, to repo_inst.gen_buf);
+        connection seL4SharedData link_vm_ram(from dispatcher_inst.guest_ram, to gen_inst.guest_ram);
+        connection seL4SharedData link_vfs_buf(from worker_inst.fs_buffer, to vfs_inst.virtual_disk_arena);
+
+        connection seL4Notification link_timer(from timer_inst.hw_tick, to dispatcher_inst.hw_tick);
+    }
+    configuration {
+	worker_inst.executable_arena_access = "RX";
+        dispatcher_inst.worker_arena_access = "RW";
+        dispatcher_inst.repo_storage_access = "R";
+        repo_inst.secure_storage_access = "RW";
+        gen_inst.gen_buf_access = "RW";
+        repo_inst.gen_buf_access = "R";
+        dispatcher_inst.guest_ram_access = "RW";
+        gen_inst.guest_ram_access = "RW";
+    }
+}
+
