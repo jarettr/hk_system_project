@@ -1,14 +1,19 @@
+/**
+ * @file generator.c
+ * @brief Polymorphic Engine Entry Point and ChaCha20 CSPRNG implementation.
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <camkes.h>
 
+/* Shared memory regions defined in CAmkES */
 extern void *guest_ram; 
 extern void *gen_buf;   
 
-/* =====================================================================
- * КРИПТОГРАФИЧЕСКИ СТОЙКИЙ ГЕНЕРАТОР (CSPRNG) - ChaCha20
- * ===================================================================== */
+/* --- ChaCha20 CSPRNG Implementation --- */
+
 #define ROTL(a,b) (((a) << (b)) | ((a) >> (32 - (b))))
 #define QR(a, b, c, d) \
     a += b; d ^= a; d = ROTL(d, 16); \
@@ -19,9 +24,9 @@ extern void *gen_buf;
 static uint32_t chacha_state[16];
 static uint32_t chacha_stream[16];
 static int chacha_index = 16;
-static int is_csprng_init = 0;
+static int is_csprng_ready = 0;
 
-static void chacha_block(uint32_t out[16], uint32_t const in[16]) {
+static void chacha_permute_block(uint32_t out[16], uint32_t const in[16]) {
     int i;
     for (i = 0; i < 16; ++i) out[i] = in[i];
     for (i = 0; i < 10; ++i) { 
@@ -37,68 +42,75 @@ static void chacha_block(uint32_t out[16], uint32_t const in[16]) {
     for (i = 0; i < 16; ++i) out[i] += in[i];
 }
 
-static void init_secure_prng() {
+static void initialize_hardware_entropy(void) {
+    /* Standard ChaCha20 Constants */
     chacha_state[0] = 0x61707865; chacha_state[1] = 0x3320646e;
     chacha_state[2] = 0x79622d32; chacha_state[3] = 0x6b206574;
+    
     for(int i = 4; i < 16; i++) {
         uint32_t lo, hi;
+        /* Gather entropy from CPU Timestamp Counter */
         __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
         chacha_state[i] = lo ^ hi ^ (i * 0x9E3779B9);
     }
-    is_csprng_init = 1;
-    printf("[GENERATOR] 🔐 Встроенный CSPRNG (ChaCha20) инициализирован!\n");
+    is_csprng_ready = 1;
+    printf("[GEN] INFO: Internal ChaCha20 CSPRNG initialized with hardware entropy.\n");
 }
 
-static uint32_t get_secure_rand() {
-    if (!is_csprng_init) init_secure_prng();
+static uint32_t request_secure_random(void) {
+    if (!is_csprng_ready) initialize_hardware_entropy();
     if (chacha_index == 16) {
-        chacha_block(chacha_stream, chacha_state);
+        chacha_permute_block(chacha_stream, chacha_state);
         chacha_state[12]++; 
         chacha_index = 0;
     }
     return chacha_stream[chacha_index++];
 }
 
-static void emit_32(uint8_t **stream, uint32_t val) {
+static void stream_emit_32(uint8_t **stream, uint32_t val) {
     memcpy(*stream, &val, 4);
     *stream += 4;
 }
 
-/* =====================================================================
- * ПОЛИМОРФНЫЙ ДВИЖОК
- * ===================================================================== */
-// ИСПРАВЛЕНИЕ: Меняем int на void
-void gen_api_request_generation(unsigned long base_addr, int variant_id, int complexity) {
-    printf("\n[GENERATOR] 🧬 Синтез ПОЛИМОРФНОГО кода (CSPRNG) (Вариант: %d)...\n", variant_id);
+/* --- RPC Interface Implementation --- */
+
+/**
+ * @brief Synthesizes a new polymorphic x86_64 variant.
+ */
+void gen_api_request_generation(uint64_t base_addr, int variant_id, int complexity) {
+    printf("[GEN] ACTION: Synthesizing variant %d (Complexity: %d)...\n", variant_id, complexity);
     
-    uint8_t *ram = (uint8_t *)guest_ram;
-    uint8_t *cursor = ram;
-    uint32_t target_payload = 0xDEADBEEF;
+    uint8_t *ram_ptr = (uint8_t *)guest_ram;
+    uint8_t *cursor = ram_ptr;
+    uint32_t logic_payload = 0xDEADBEEF;
     
-    int junk_len = 5 + (get_secure_rand() % 25);
+    /* 1. Junk code insertion (MTD strategy) */
+    int junk_len = 5 + (request_secure_random() % 25);
     for (int i = 0; i < junk_len; i++) {
-        uint32_t r = get_secure_rand() % 4;
-        if (r == 0)      *cursor++ = 0x90; 
-        else if (r == 1) *cursor++ = 0xFC; 
-        else if (r == 2) *cursor++ = 0xF8; 
-        else { *cursor++ = 0x87; *cursor++ = 0xC9; }
+        uint32_t r = request_secure_random() % 4;
+        if (r == 0)      *cursor++ = 0x90; // NOP
+        else if (r == 1) *cursor++ = 0xFC; // CLD
+        else if (r == 2) *cursor++ = 0xF8; // CLC
+        else { *cursor++ = 0x87; *cursor++ = 0xC9; } // XCHG ECX, ECX
     }
 
-    uint32_t mask1 = get_secure_rand();
-    uint32_t mask2 = target_payload ^ mask1;
+    /* 2. Logic Masking */
+    uint32_t mask = request_secure_random();
+    uint32_t obfuscated_val = logic_payload ^ mask;
     
-    *cursor++ = 0x31; *cursor++ = 0xC0;             
-    *cursor++ = 0x05; emit_32(&cursor, mask1);      
-    *cursor++ = 0x35; emit_32(&cursor, mask2);      
-    *cursor++ = 0xC3; 
+    /* x86_64 Opcode construction */
+    *cursor++ = 0x31; *cursor++ = 0xC0;               // XOR EAX, EAX
+    *cursor++ = 0x05; stream_emit_32(&cursor, mask);   // ADD EAX, mask
+    *cursor++ = 0x35; stream_emit_32(&cursor, obfuscated_val); // XOR EAX, obfuscated_val
+    *cursor++ = 0xC3;                                  // RET
 
-    int size = cursor - ram;
-    memcpy(gen_buf, guest_ram, size);
+    int total_size = cursor - ram_ptr;
+    memcpy(gen_buf, guest_ram, total_size);
     
-    printf("[GENERATOR] ⚙️ Упаковано кода: %d байт. Отправка в Repo...\n", size);
+    printf("[GEN] SUCCESS: Binary variant generated (%d bytes). Notifying Repository.\n", total_size);
     
-    // ИСПРАВЛЕНИЕ: Правильное имя метода из IDL
-    repo_write_add_variant(variant_id, size);
+    /* Signal Repository to register the new variant */
+    repo_write_api_add_variant(variant_id, total_size);
 }
 
 void hw_tick_handle(void) { }
