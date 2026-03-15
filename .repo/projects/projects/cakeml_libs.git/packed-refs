@@ -1,0 +1,9 @@
+# pack-refs with: peeled fully-peeled sorted 
+075a5fe2c959080b966a2104f8833d27e59b59b9 refs/remotes/seL4/10.1.x-compatible
+d67ca960f4b910e99bcd807f3d7e345fd07ac8b8 refs/remotes/seL4/11.0.x-compatible
+d67ca960f4b910e99bcd807f3d7e345fd07ac8b8 refs/remotes/seL4/12.0.x-compatible
+cba6d6ba3440c75853cdfa3429cd0a7e5e9b270d refs/remotes/seL4/12.1.x-compatible
+0d3f232e795a7e79bd3ecd831636507711275a0a refs/remotes/seL4/13.0.x-compatible
+75c30565dfc8e2dc3893beb4266ea0d46928fb67 refs/remotes/seL4/libsel4_cakeml
+fd76a2567d5aa8685b5e44fd167a7ece05d2ef7c refs/remotes/seL4/master
+bc418e28b6a97ab242ea063bed412319f525e3d2 refs/remotes/seL4/sel4-utils

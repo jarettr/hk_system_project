@@ -1,0 +1,19 @@
+# pack-refs with: peeled fully-peeled sorted 
+19b7ff1c1e71d8d645d777aaeafdae800199da5e refs/remotes/origin/master
+9a09e9a955dbb4a1895222d336d3097d1ef360aa refs/tags/2.0.0
+3d3c198a3a81a84f20cf94c8ba43e8fd8992e088 refs/tags/camkes-2.1.0
+c782dba2b93f4160d9d2dc5d3001cf95b74453e8 refs/tags/camkes-2.2.0
+397e2cee64c9d61cefb1cd97676223f8d0d157c3 refs/tags/camkes-2.3.1
+30d56914faf7c8d39e8b0234b20e8970e2deb35f refs/tags/camkes-3.0.0
+38827261006e8ad8e43c5c8aaa08425a82efb9bc refs/tags/camkes-3.1.0
+458a9ef0f91f9d8504d768e379380c68f76fdc63 refs/tags/camkes-3.10.0
+62cde59caa12eac9b9c91e243b326287cd8b9052 refs/tags/camkes-3.11.0
+2a2326d8503632be1fd38208ba3be4d6ee92f154 refs/tags/camkes-3.11.1
+b7e5953404964608047ff05af53fce67eb001ce7 refs/tags/camkes-3.2.0
+f9d642affcb1a110b5776b37c6e1ed976782a99d refs/tags/camkes-3.3.0
+75adb4a1e859b1175e57ee0106da6a5975c00e9b refs/tags/camkes-3.4.0
+a1b56e1fc48ad5f7c87dedd2235b41918c68507d refs/tags/camkes-3.5.0
+cd2991d1f63332813a4808dbe9e06ba246aee19d refs/tags/camkes-3.6.0
+758aca915c020eec6d381aeaa7b17656173554fa refs/tags/camkes-3.7.0
+67ce937df0c8f821e6a9f4615d9d2fa2bf9a8885 refs/tags/camkes-3.8.0
+922c343fd0a9b3541303459b32a52c7c27393abb refs/tags/camkes-3.9.0

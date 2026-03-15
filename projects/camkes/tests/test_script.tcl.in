@@ -1,0 +1,25 @@
+#
+# Copyright 2019, Data61, CSIRO (ABN 41 687 119 230)
+#
+# SPDX-License-Identifier: BSD-2-Clause
+#
+
+# This is a generated file: Your edits may be ovewritten.
+
+proc wait_for { t } {
+    expect {
+        "$t" {
+        }
+        timeout {
+            exit 1
+        }
+        eof {
+            exit 1
+        }
+    }
+}
+
+
+spawn ./simulate
+
+@TEST_SCRIPT@

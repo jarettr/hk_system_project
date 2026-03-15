@@ -1,0 +1,21 @@
+# pack-refs with: peeled fully-peeled sorted 
+4655c2a33faff5bb3ca6ea0372ca072110274fb6 refs/remotes/seL4/camkes-2.0.x-compatible
+4655c2a33faff5bb3ca6ea0372ca072110274fb6 refs/remotes/seL4/camkes-2.1.x-compatible
+68c1886b5a0899b49ffa5ce6d9f78c4385eef17f refs/remotes/seL4/camkes-2.2.x-compatible
+46e2d5a12b5357ba6648c27268a7c4f8140c3388 refs/remotes/seL4/camkes-2.3.x-compatible
+2371ffeca64a73f5a76411047451dd3532ed4906 refs/remotes/seL4/camkes-3.0.x-compatible
+179e3d0ee7e4d78bd7c1554ad17e3fddf9b0395a refs/remotes/seL4/camkes-3.1.x-compatible
+02133497ed126910ec0f4ddb98b997e481d91ffa refs/remotes/seL4/camkes-3.10.x-compatible
+0a53b39805f44870b65bd33dfe7535a8856de281 refs/remotes/seL4/camkes-3.11.x-compatible
+e10c365fc567c275e7e5236a9f1c04e4d0adbcbb refs/remotes/seL4/camkes-3.2.x-compatible
+8e2ef7eac3e83585888013ab57c44a1b1620a641 refs/remotes/seL4/camkes-3.3.x-compatible
+8e2ef7eac3e83585888013ab57c44a1b1620a641 refs/remotes/seL4/camkes-3.5.x-compatible
+d3050e92dd27a22eea6357c7b1c9048e84b2d0e2 refs/remotes/seL4/camkes-3.6.x-compatible
+d3050e92dd27a22eea6357c7b1c9048e84b2d0e2 refs/remotes/seL4/camkes-3.7.x-compatible
+6b4b5f9650a9a3b0aa7e1151bf82750cb3156e93 refs/remotes/seL4/camkes-3.8.x-compatible
+34797e42bdfd97ad5757533ac9e291ec03c59e08 refs/remotes/seL4/camkes-3.9.x-compatible
+8e2ef7eac3e83585888013ab57c44a1b1620a641 refs/remotes/seL4/camkes-camkes-3.4.x-compatible
+f54c4d3f97fba17ee2dec61f116a93ecf9dd1a11 refs/remotes/seL4/df-public
+ad0d2891ff5f15a37de2980e103b7024960b5a26 refs/remotes/seL4/master
+3edd75a00068cb2d8162dd2d15d607e1cdd86b76 refs/remotes/seL4/rk3288
+6fdbab6d47e873f6cd6dffbba0a70e329d3dab4d refs/remotes/seL4/zynqmp_smmu

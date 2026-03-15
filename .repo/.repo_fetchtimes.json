@@ -1,0 +1,20 @@
+{
+  "cakeml_libs.git": 1.0421080589294434,
+  "camkes.git": 1.3013062477111816,
+  "capdl.git": 1.3476407527923584,
+  "global-components.git": 1.3570301532745361,
+  "musllibc.git": 1.8096098899841309,
+  "camkes-tool.git": 2.0309832096099854,
+  "seL4.git": 2.2674973011016846,
+  "sel4runtime": 1.5194661617279053,
+  "picotcp.git": 2.4106857776641846,
+  "projects_libs.git": 2.278438091278076,
+  "util_libs.git": 1.6613101959228516,
+  "seL4_projects_libs.git": 2.609813928604126,
+  "opensbi": 1.7117009162902832,
+  "seL4_libs.git": 3.1727452278137207,
+  "pruner.git": 1.127147912979126,
+  "lwip.git": 4.643109321594238,
+  "rumprun.git": 1.3948559761047363,
+  "seL4_tools.git": 1.343930721282959
+}

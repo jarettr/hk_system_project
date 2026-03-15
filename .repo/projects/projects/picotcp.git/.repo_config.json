@@ -1,0 +1,26 @@
+{
+  "core.repositoryformatversion": [
+    "0"
+  ],
+  "core.filemode": [
+    "true"
+  ],
+  "user.name": [
+    "\u044cmak"
+  ],
+  "filter.lfs.smudge": [
+    "git-lfs smudge --skip -- %f"
+  ],
+  "filter.lfs.process": [
+    "git-lfs filter-process --skip"
+  ],
+  "remote.picotcp.url": [
+    "https://github.com/tass-belgium/picotcp.git"
+  ],
+  "remote.picotcp.projectname": [
+    "picotcp.git"
+  ],
+  "remote.picotcp.fetch": [
+    "+refs/heads/*:refs/remotes/picotcp/*"
+  ]
+}

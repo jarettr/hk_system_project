@@ -1,0 +1,15 @@
+5ffcb07f42a4139a6dc5038fc620b27d7a07d713		branch '10.0.x-compatible' of https://github.com/seL4/rumprun
+f9edf5e150c636a61d70f772d44316149aed2444		branch '10.1.x-compatible' of https://github.com/seL4/rumprun
+e307da61f7d2204e14da8fbe19c630373265d123		branch '11.0.x-compatible' of https://github.com/seL4/rumprun
+405fb8ed94b9db554749a9cda29a235ca6c856ed		branch '12.0.x-compatible' of https://github.com/seL4/rumprun
+405fb8ed94b9db554749a9cda29a235ca6c856ed		branch '12.1.x-compatible' of https://github.com/seL4/rumprun
+0be59c66494209d1d379fea5dbdd09aa23f54934		branch '13.0.x-compatible' of https://github.com/seL4/rumprun
+8ca7e701fd736aa8e5b00d65ac825900d9ad1557		branch '8.0.x-compatible' of https://github.com/seL4/rumprun
+fc53174d76b03fb627b7b96240c85bb776105c90		branch '9.0.x-compatible' of https://github.com/seL4/rumprun
+00f78d6a8c5bb21281a96443b97bc658cde2f4da		branch 'kent/rumprun-fix' of https://github.com/seL4/rumprun
+0be59c66494209d1d379fea5dbdd09aa23f54934		branch 'master' of https://github.com/seL4/rumprun
+c348605ec29f747bbe1a6cbe7ad04abf1db48961		branch 'mato-wip-rumprun-config' of https://github.com/seL4/rumprun
+b9a19b51390e9e7e194b2b03c07730055313a7f5		branch 'pooka-bakespec' of https://github.com/seL4/rumprun
+928cfc4529d3b4b675d1d1c3d768dca5349f9f7e		branch 'pooka-rumprunlaunch' of https://github.com/seL4/rumprun
+405fb8ed94b9db554749a9cda29a235ca6c856ed		branch 'trigger' of https://github.com/seL4/rumprun
+96b8a5ee18676160d1b1794292e60aa43303b409		branch 'wip-rootfs' of https://github.com/seL4/rumprun

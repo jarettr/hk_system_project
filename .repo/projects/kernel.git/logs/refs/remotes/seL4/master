@@ -1,0 +1,1 @@
+0000000000000000000000000000000000000000 c406015c389decc4559fd44cb69604ddd24a0ddb ьmak <root@tctrsjqiup.local> 1773489598 +0000	fetch --quiet --progress seL4 --prune --recurse-submodules=no --tags +refs/heads/*:refs/remotes/seL4/* +refs/heads/master:refs/remotes/seL4/master +refs/tags/*:refs/tags/*: storing head

@@ -1,0 +1,8 @@
+075a5fe2c959080b966a2104f8833d27e59b59b9		branch '10.1.x-compatible' of https://github.com/seL4/cakeml_libs
+d67ca960f4b910e99bcd807f3d7e345fd07ac8b8		branch '11.0.x-compatible' of https://github.com/seL4/cakeml_libs
+d67ca960f4b910e99bcd807f3d7e345fd07ac8b8		branch '12.0.x-compatible' of https://github.com/seL4/cakeml_libs
+cba6d6ba3440c75853cdfa3429cd0a7e5e9b270d		branch '12.1.x-compatible' of https://github.com/seL4/cakeml_libs
+0d3f232e795a7e79bd3ecd831636507711275a0a		branch '13.0.x-compatible' of https://github.com/seL4/cakeml_libs
+75c30565dfc8e2dc3893beb4266ea0d46928fb67		branch 'libsel4_cakeml' of https://github.com/seL4/cakeml_libs
+fd76a2567d5aa8685b5e44fd167a7ece05d2ef7c		branch 'master' of https://github.com/seL4/cakeml_libs
+bc418e28b6a97ab242ea063bed412319f525e3d2		branch 'sel4-utils' of https://github.com/seL4/cakeml_libs

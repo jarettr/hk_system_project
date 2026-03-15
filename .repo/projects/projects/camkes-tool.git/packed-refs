@@ -1,0 +1,32 @@
+# pack-refs with: peeled fully-peeled sorted 
+0adab3204c9ef61d06bbc72d6fd7f5e4393c39b6 refs/remotes/seL4/cli
+ce33eddee06abbac2ecf18439700d949a6f29709 refs/remotes/seL4/df-public
+13a5cb943fcc8c6b448ccb884b74b549f5d2002a refs/remotes/seL4/jade/guest_driver
+54db1ff2725a91cce700fe33f46dece800b10b9e refs/remotes/seL4/master
+9599db4585f3e631d585b3ea92b8c7d1ce4c4d9c refs/remotes/seL4/next
+207d1e7dd6b0a4707377fac8c34c09159a8c6cf9 refs/remotes/seL4/tipc-stage
+9a2ab90dc97c759bd7f4a30096eef835a792103d refs/tags/2.0.0
+b91c7aa33cd6f2a840dc7cd3cc6ce16264e12642 refs/tags/camkes-02-01--2014-07-29
+^529a7503eea7ad6756adb89ebf1c882b3a34ca65
+669f389ca33997589d556f14902b44e8a1b487cd refs/tags/camkes-2.1.0
+e7729af31f4f37ecfaa5924acc548072dd743d80 refs/tags/camkes-2.2.0
+1c6294184cb0e4c088507792b27a6ed13a6ac92d refs/tags/camkes-2.3.0
+e2535843e6d10976ff025b19fb7a7d22bb047384 refs/tags/camkes-2.3.1
+40068d3fd69209c5fcccc9ec6c3976e9e6342230 refs/tags/camkes-3.0.0
+141ecc82c4a2816861926d2ae02404f75d247628 refs/tags/camkes-3.1.0
+adadc449c8345e5abef0dcf73cf73f70d8db0a9c refs/tags/camkes-3.10.0
+13af3b660fdd6e0d72a8ce816b76e512d40ce5ed refs/tags/camkes-3.11.0
+^0863c1447ffa914d540e79d2ad696edd4c39fcf6
+0c4436486be503bd2fd317f3169cb14a72c6c26b refs/tags/camkes-3.11.1
+^7965269d93082728a5ae016f65a8f562ffc611e7
+06cd270bead420fde73bfa318a11eefba1a05992 refs/tags/camkes-3.2.0
+1eda7548a996913081a7df77df720359be78d9d2 refs/tags/camkes-3.3.0
+a7d272cc026fc843c23a308a0aaac4f3cf39c850 refs/tags/camkes-3.4.0
+5cada976caf8fb7ddb2fcf08be8b6af64ece49c0 refs/tags/camkes-3.5.0
+599b493e4d263f412e2121896320245ccb9799f9 refs/tags/camkes-3.6.0
+cd830d2c8cae7ff285c7efd85c8ce846be798e05 refs/tags/camkes-3.7.0
+27682e998fda03d6c83de2c23ba7854b0c525beb refs/tags/camkes-3.8.0
+891ce6f26170aaf97a04d42c922d4e0a3d9a7644 refs/tags/camkes-3.9.0
+1464d32b32f24dceb184dcff6cd39de74be221a9 refs/tags/sc-deprecated
+13a5cb943fcc8c6b448ccb884b74b549f5d2002a refs/tags/tii-11-28-2022
+baba1aa979ee24ede341eddce58732ce66e68e70 refs/tags/vm_x86-deprecated

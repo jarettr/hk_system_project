@@ -1,0 +1,12 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+[user]
+	name = ьmak
+[filter "lfs"]
+	smudge = git-lfs smudge --skip -- %f
+	process = git-lfs filter-process --skip
+[remote "picotcp"]
+	url = https://github.com/tass-belgium/picotcp.git
+	projectname = picotcp.git
+	fetch = +refs/heads/*:refs/remotes/picotcp/*

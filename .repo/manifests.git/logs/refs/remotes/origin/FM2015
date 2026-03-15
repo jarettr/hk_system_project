@@ -1,0 +1,1 @@
+0000000000000000000000000000000000000000 e94022fda2886715aa67e709db8a9db4598ade60 ьmak <root@tctrsjqiup.local> 1773489595 +0000	fetch --quiet origin --recurse-submodules=no --tags +refs/heads/*:refs/remotes/origin/* +refs/heads/master:refs/remotes/origin/master +refs/tags/*:refs/tags/*: storing head

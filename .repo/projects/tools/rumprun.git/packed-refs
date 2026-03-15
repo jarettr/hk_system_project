@@ -1,0 +1,16 @@
+# pack-refs with: peeled fully-peeled sorted 
+5ffcb07f42a4139a6dc5038fc620b27d7a07d713 refs/remotes/seL4/10.0.x-compatible
+f9edf5e150c636a61d70f772d44316149aed2444 refs/remotes/seL4/10.1.x-compatible
+e307da61f7d2204e14da8fbe19c630373265d123 refs/remotes/seL4/11.0.x-compatible
+405fb8ed94b9db554749a9cda29a235ca6c856ed refs/remotes/seL4/12.0.x-compatible
+405fb8ed94b9db554749a9cda29a235ca6c856ed refs/remotes/seL4/12.1.x-compatible
+0be59c66494209d1d379fea5dbdd09aa23f54934 refs/remotes/seL4/13.0.x-compatible
+8ca7e701fd736aa8e5b00d65ac825900d9ad1557 refs/remotes/seL4/8.0.x-compatible
+fc53174d76b03fb627b7b96240c85bb776105c90 refs/remotes/seL4/9.0.x-compatible
+00f78d6a8c5bb21281a96443b97bc658cde2f4da refs/remotes/seL4/kent/rumprun-fix
+0be59c66494209d1d379fea5dbdd09aa23f54934 refs/remotes/seL4/master
+c348605ec29f747bbe1a6cbe7ad04abf1db48961 refs/remotes/seL4/mato-wip-rumprun-config
+b9a19b51390e9e7e194b2b03c07730055313a7f5 refs/remotes/seL4/pooka-bakespec
+928cfc4529d3b4b675d1d1c3d768dca5349f9f7e refs/remotes/seL4/pooka-rumprunlaunch
+405fb8ed94b9db554749a9cda29a235ca6c856ed refs/remotes/seL4/trigger
+96b8a5ee18676160d1b1794292e60aa43303b409 refs/remotes/seL4/wip-rootfs

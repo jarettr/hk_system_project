@@ -1,0 +1,1 @@
+0000000000000000000000000000000000000000 74434f255873d74e56cc50aa762d1caf24c099f8 ьmak <root@tctrsjqiup.local> 1773489599 +0000	fetch --quiet --progress opensbi --prune --recurse-submodules=no --tags +refs/heads/*:refs/remotes/opensbi/* +refs/tags/v0.9:refs/tags/v0.9 +refs/tags/*:refs/tags/*: storing head

@@ -1,0 +1,22 @@
+# pack-refs with: peeled fully-peeled sorted 
+5737a1c543787e85ae9d0530d1132e7af44ee323 refs/remotes/seL4/10.0.x-compatible
+423c9d5e970f3e78166fb723561d613182e7333a refs/remotes/seL4/10.1.x-compatible
+6bc3c424a423f794f6b994c5929499e6af68aa72 refs/remotes/seL4/3.0.x-compatible
+986c73135771d88bf7911bd36785ef5da866eac3 refs/remotes/seL4/3.1.x-compatible
+a07d1e7a332697d773e1d7b4e7d9c7a5c852d675 refs/remotes/seL4/3.2.x-compatible
+29737c02a3ad0b5e51a0ea69977cbd304bd01d86 refs/remotes/seL4/4.0.x-compatible
+f26506896a2128f7f5008818f8e8f488087d2aae refs/remotes/seL4/5.2.x-compatible
+65a9cf2ad5c91dd7e30788363ffc9a45966fd0a1 refs/remotes/seL4/6.0.x-compatible
+a4de9ab74fa9f725b8aee3d7dd77ea8363ee6858 refs/remotes/seL4/7.0.x-compatible
+31520d27dfa9ab84cd08cd3951abb63e6fcf6eb7 refs/remotes/seL4/8.0.x-compatible
+9608a16b87fe9310c4dd58c1e8d7d8d40d6857e5 refs/remotes/seL4/9.0.x-compatible
+e2304564964fee87cf3cca8edee97c1301dd4217 refs/remotes/seL4/dyn-domains
+79624efab687e0bdbe29ce45847d1d86dd7c73ff refs/remotes/seL4/master
+1459433467ec90aadc960c1d80a61fa619578ebb refs/remotes/seL4/sgi-capdl-tool
+332644f66d689bdd9ff87c737be7c56708d11355 refs/tags/0.1.0
+0623881cc53d59487858dcda8523a17197c65728 refs/tags/0.2.0
+ae2b4e64dc50614a929b94e48ddc36c5bd740522 refs/tags/0.2.1
+936f290c7a85495b589c107ba6a960f8e82c4d29 refs/tags/0.3.0
+^5d0c378d8edf2c4cc2d90c07cac57030186e03c0
+99758b4469c84e23d4f7cd79332fd676f688ab89 refs/tags/0.4.0
+^80e2f52a99319b906f6c64eadc537b29345acec2
